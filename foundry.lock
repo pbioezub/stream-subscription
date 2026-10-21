@@ -1,0 +1,20 @@
+{
+  "lib/forge-std": {
+    "tag": {
+      "name": "v1.17.0",
+      "rev": "f3dae6e6ee381f25eb6a246f7da9b85c91a68219"
+    }
+  },
+  "lib/openzeppelin-contracts": {
+    "tag": {
+      "name": "v5.0.2",
+      "rev": "dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+    }
+  },
+  "lib/protocol-monorepo": {
+    "branch": {
+      "name": "dev",
+      "rev": "0567de227327800b81ecaa34cba6d417c62bd4e3"
+    }
+  }
+}
