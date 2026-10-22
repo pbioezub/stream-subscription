@@ -42,7 +42,9 @@ Deployed on OP Sepolia:
 | StreamSubscriptionFactory | [`0xe684dA181b49156d602b814FFfd4C5De6fD52132`](https://optimism-sepolia.blockscout.com/address/0xe684dA181b49156d602b814FFfd4C5De6fD52132) |
 | demo subscription (0.001 ETHx / month) | [`0x4048ef263FbE30C0Ce34e84B8242F1e9d14a1ce3`](https://optimism-sepolia.blockscout.com/address/0x4048ef263FbE30C0Ce34e84B8242F1e9d14a1ce3) |
 
-On OP Mainnet Super App registration is permissioned, so the factory needs to be allowlisted by Superfluid first.
+OP Mainnet: factory [`0xDd18EE5E4fEF79430D4E4d72Ac184343D2AEA0B2`](https://optimistic.etherscan.io/address/0xDd18EE5E4fEF79430D4E4d72Ac184343D2AEA0B2)
+(verified on Sourcify). Super App registration is permissioned there, so `create` reverts until the factory is
+allowlisted by Superfluid.
 
 ## Frontend
 
