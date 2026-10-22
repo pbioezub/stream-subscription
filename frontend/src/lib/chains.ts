@@ -16,7 +16,7 @@ const env = (v: string | undefined) => (v ? (v as Address) : undefined);
 
 export const CHAINS: Record<number, ChainInfo> = {
   [optimismSepolia.id]: {
-    factory: env(import.meta.env.VITE_FACTORY_OP_SEPOLIA),
+    factory: env(import.meta.env.VITE_FACTORY_OP_SEPOLIA) ?? "0xe684dA181b49156d602b814FFfd4C5De6fD52132",
     ethx: "0x0043d7c85C8b96a49A72A92C0B48CdC4720437d7",
     subgraph: "https://subgraph-endpoints.superfluid.dev/optimism-sepolia/protocol-v1",
     explorer: "https://sepolia-optimism.etherscan.io",
