@@ -12,6 +12,8 @@ Contracts:
 - `src/StreamSubscription.sol` — the Super App, also admin of the revenue pool
 - `src/StreamSubscriptionFactory.sol` — deploys and registers new subscriptions
 
+The owner can pause new subscriptions (`setPaused`); existing streams keep working.
+
 GDA buffers aren't covered by app credit, so the app needs a small reserve in the token before the first
 subscriber joins (`initialReserve` in `create`, or just transfer it; `bufferShortfall(rate)` tells how much).
 
@@ -21,6 +23,9 @@ subscriber joins (`initialReserve` in `create`, or just transfer it; `bufferShor
 git clone --recurse-submodules https://github.com/pbioezub/stream-subscription
 forge test
 ```
+
+`test/StreamSubscription.invariant.t.sol` runs random subscribe / unsubscribe / units / withdraw sequences and
+checks that the app never gets jailed or goes insolvent.
 
 Fork tests run against OP Sepolia / OP Mainnet if `OP_SEPOLIA_RPC_URL` / `OP_MAINNET_RPC_URL` are set.
 
