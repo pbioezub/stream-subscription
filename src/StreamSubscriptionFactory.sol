@@ -7,8 +7,9 @@ import {
 } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import { StreamSubscription } from "./StreamSubscription.sol";
 
-/// @notice Deploys and registers StreamSubscription apps.
-/// @dev Where app registration is permissioned (e.g. OP Mainnet) this factory has to be allowlisted by Superfluid.
+/// @notice Deploys StreamSubscription apps and keeps track of them.
+/// @dev Apps self-register, so where registration is permissioned (e.g. OP Mainnet) only allowlisted
+///      deployer accounts (tx.origin) can call `create`.
 contract StreamSubscriptionFactory {
     ISuperfluid public immutable host;
 
@@ -36,7 +37,6 @@ contract StreamSubscriptionFactory {
         returns (StreamSubscription subscription)
     {
         subscription = new StreamSubscription(host, token, minFlowRate, poolShareBps, msg.sender);
-        host.registerApp(subscription, subscription.getConfigWord(true, true, true));
 
         if (initialReserve > 0 && !token.transferFrom(msg.sender, address(subscription), initialReserve)) {
             revert ReserveTransferFailed();

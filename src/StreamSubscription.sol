@@ -77,6 +77,9 @@ contract StreamSubscription is CFASuperAppBase {
         pool = token_.createPool(
             address(this), PoolConfig({ transferabilityForUnitsOwner: false, distributionFromAnyAddress: false })
         );
+
+        // where registration is permissioned (e.g. OP Mainnet), tx.origin has to be an allowlisted deployer
+        selfRegister(true, true, true);
     }
 
     // --- views ---

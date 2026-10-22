@@ -77,8 +77,9 @@ contract StreamSubscriptionForkTest is Test {
         assertTrue(ok);
     }
 
-    /// OP Mainnet: registration is permissioned, an unapproved factory can't register apps.
-    function testForkOpMainnetRequiresWhitelisting() public {
+    /// OP Mainnet: registration is permissioned. Apps self-register, so the deployer (tx.origin) has to be
+    /// allowlisted; the factory itself needs no permission.
+    function testForkOpMainnetRequiresAllowlistedDeployer() public {
         string memory rpc = vm.envOr("OP_MAINNET_RPC_URL", string(""));
         vm.skip(bytes(rpc).length == 0);
         vm.createSelectFork(rpc);
@@ -86,8 +87,38 @@ contract StreamSubscriptionForkTest is Test {
         (, bytes memory ret) =
             address(OP_MAINNET_HOST).staticcall(abi.encodeWithSignature("APP_WHITE_LISTING_ENABLED()"));
         assertTrue(abi.decode(ret, (bool)));
+
         StreamSubscriptionFactory factory = new StreamSubscriptionFactory(OP_MAINNET_HOST);
+        address deployer = makeAddr("deployer");
+
+        // not allowlisted
+        vm.prank(deployer, deployer);
         vm.expectRevert(); // HOST_NO_APP_REGISTRATION_PERMISSION
         factory.create(OP_MAINNET_ETHX, MIN_RATE, 8000, 0);
+
+        // allowlisted (simulates the governance granting the role)
+        address acl = address(OP_MAINNET_HOST.getSimpleACL());
+        vm.mockCall(
+            acl,
+            abi.encodeWithSignature("hasRole(bytes32,address)", keccak256("ACL_SUPERAPP_REGISTRATION_ROLE"), deployer),
+            abi.encode(true)
+        );
+        vm.prank(deployer, deployer);
+        StreamSubscription sub = factory.create(OP_MAINNET_ETHX, MIN_RATE, 8000, 0);
+        assertTrue(OP_MAINNET_HOST.isApp(sub));
+        assertEq(sub.owner(), deployer);
+
+        // and it works with real ETHx
+        address alice = makeAddr("alice");
+        vm.deal(alice, 1 ether);
+        vm.prank(alice);
+        (bool ok,) = address(OP_MAINNET_ETHX).call{ value: 1 ether }(abi.encodeWithSignature("upgradeByETH()"));
+        assertTrue(ok);
+        vm.prank(alice);
+        CFA_FORWARDER.setFlowrate(OP_MAINNET_ETHX, address(sub), MIN_RATE);
+        assertTrue(sub.isSubscribed(alice));
+        vm.prank(alice);
+        CFA_FORWARDER.setFlowrate(OP_MAINNET_ETHX, address(sub), 0);
+        assertFalse(OP_MAINNET_HOST.isAppJailed(sub));
     }
 }
