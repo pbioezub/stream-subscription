@@ -1,0 +1,60 @@
+:root {
+  --bg: #fafaf8;
+  --fg: #1b1d1f;
+  --muted: #6b7075;
+  --line: #e2e3e0;
+  --card: #ffffff;
+  --accent: #14853b;
+  --error: #b42318;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121416;
+    --fg: #e8e9ea;
+    --muted: #8d9399;
+    --line: #2a2e32;
+    --card: #1a1d20;
+    --accent: #3ec06a;
+    --error: #f07167;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 680px; margin: 0 auto; padding: 16px; }
+a { color: var(--accent); }
+h2 { margin: 24px 0 4px; }
+h3 { margin: 0 0 8px; font-size: 16px; }
+
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.logo { color: var(--fg); font-weight: 600; text-decoration: none; }
+nav, .wallet, .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row { margin: 8px 0; }
+.row input { flex: 1; min-width: 160px; }
+
+input, select, button { font: inherit; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+input.narrow { flex: 0 0 80px; min-width: 0; }
+button { cursor: pointer; background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: 0.5; cursor: default; }
+button.link { background: none; border: none; color: var(--accent); padding: 0; }
+
+label { display: block; margin: 12px 0; }
+label input { display: block; width: 100%; margin-top: 4px; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin: 16px 0; }
+.card.ok { border-color: var(--accent); }
+details summary { cursor: pointer; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 16px 0; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 6px 4px; border-top: 1px solid var(--line); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.error { color: var(--error); }

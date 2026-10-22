@@ -1,0 +1,26 @@
+{
+  "name": "stream-subscription-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "abi": "node scripts/gen-abi.mjs",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.66.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "viem": "2.23.2",
+    "wagmi": "2.14.11"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.7.3",
+    "vite": "6.1.0"
+  }
+}
