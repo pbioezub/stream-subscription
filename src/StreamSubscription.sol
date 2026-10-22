@@ -29,6 +29,9 @@ contract StreamSubscription is CFASuperAppBase {
     address public owner;
     address public pendingOwner;
 
+    /// @notice Number of open incoming streams.
+    uint256 public subscriberCount;
+
     event Subscribed(address indexed subscriber, int96 flowRate);
     event SubscriptionUpdated(address indexed subscriber, int96 flowRate, int96 previousFlowRate);
     event Unsubscribed(address indexed subscriber, int96 previousFlowRate);
@@ -161,6 +164,7 @@ contract StreamSubscription is CFASuperAppBase {
         returns (bytes memory)
     {
         if (flowRate < minFlowRate) revert FlowRateTooLow(flowRate, minFlowRate);
+        ++subscriberCount;
         emit Subscribed(sender, flowRate);
         return _syncDistribution(ctx, false);
     }
@@ -184,6 +188,8 @@ contract StreamSubscription is CFASuperAppBase {
         override
         returns (bytes memory)
     {
+        // guarded: an underflow here would revert and jail the app
+        if (subscriberCount > 0) --subscriberCount;
         emit Unsubscribed(sender, previousFlowRate);
         return _syncDistribution(ctx, true);
     }

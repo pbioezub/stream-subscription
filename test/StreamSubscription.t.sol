@@ -142,6 +142,16 @@ contract StreamSubscriptionTest is Test {
         _assertHealthy();
     }
 
+    function testSubscriberCount() public {
+        _setFlow(token, alice, MIN_RATE);
+        _setFlow(token, bob, MIN_RATE);
+        assertEq(sub.subscriberCount(), 2);
+        _setFlow(token, alice, MIN_RATE * 2); // update doesn't count
+        assertEq(sub.subscriberCount(), 2);
+        _setFlow(token, alice, 0);
+        assertEq(sub.subscriberCount(), 1);
+    }
+
     function testRejectsTooLowFlowRate() public {
         vm.expectRevert(); // FlowRateTooLow bubbles up through the host
         _setFlow(token, alice, MIN_RATE - 1);
@@ -301,6 +311,7 @@ contract StreamSubscriptionTest is Test {
                 sf.cfa, abi.encodeCall(sf.cfa.deleteFlow, (token, poor, address(sub), new bytes(0))), new bytes(0)
             );
         assertFalse(sub.isSubscribed(poor));
+        assertEq(sub.subscriberCount(), 0);
         assertEq(sub.distributionFlowRate(), 0);
         _assertHealthy();
     }
