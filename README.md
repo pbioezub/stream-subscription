@@ -37,6 +37,11 @@ forge script script/Deploy.s.sol --rpc-url optimism_sepolia --account deployer -
 
 On OP Mainnet Super App registration is permissioned, so the factory needs to be allowlisted by Superfluid first.
 
+## Frontend
+
+`frontend/` has a small web app: a subscribe page to share with subscribers, a creator page (stats,
+collaborators, withdraw, pause) and a form to create new subscriptions. See `frontend/README.md`.
+
 ## License
 
 MIT
