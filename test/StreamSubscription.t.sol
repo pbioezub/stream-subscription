@@ -177,6 +177,23 @@ contract StreamSubscriptionTest is Test {
         assertTrue(sub.isSubscribed(bob));
     }
 
+    /// Callbacks run with a 3M gas limit; the whole create/delete tx (incl. the callback) stays well below it.
+    function testCallbackGas() public {
+        _setUnits(collab1, 1, collab2, 1);
+        vm.prank(alice);
+        uint256 g = gasleft();
+        sf.cfaV1Forwarder.setFlowrate(token, address(sub), MIN_RATE);
+        uint256 createGas = g - gasleft();
+        vm.prank(alice);
+        g = gasleft();
+        sf.cfaV1Forwarder.setFlowrate(token, address(sub), 0);
+        uint256 deleteGas = g - gasleft();
+        emit log_named_uint("create tx gas", createGas);
+        emit log_named_uint("delete tx gas", deleteGas);
+        assertLt(createGas, 3_000_000);
+        assertLt(deleteGas, 3_000_000);
+    }
+
     function testRejectsTooLowFlowRate() public {
         vm.expectRevert(); // FlowRateTooLow bubbles up through the host
         _setFlow(token, alice, MIN_RATE - 1);
