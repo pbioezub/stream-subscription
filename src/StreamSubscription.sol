@@ -31,6 +31,8 @@ contract StreamSubscription is CFASuperAppBase {
 
     /// @notice Number of open incoming streams.
     uint256 public subscriberCount;
+    /// @notice When true, new streams are rejected. Existing ones keep working and can still be updated or closed.
+    bool public paused;
 
     event Subscribed(address indexed subscriber, int96 flowRate);
     event SubscriptionUpdated(address indexed subscriber, int96 flowRate, int96 previousFlowRate);
@@ -39,6 +41,7 @@ contract StreamSubscription is CFASuperAppBase {
     event DistributionHalted(int96 targetFlowRate);
     event MemberUnitsUpdated(address indexed member, uint128 units);
     event Withdrawn(address indexed to, uint256 amount);
+    event PausedSet(bool paused);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -51,6 +54,7 @@ contract StreamSubscription is CFASuperAppBase {
     error NotOwner();
     error NotPendingOwner();
     error TransferFailed();
+    error SubscriptionsPaused();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -135,6 +139,11 @@ contract StreamSubscription is CFASuperAppBase {
     }
 
     /// @dev amount = type(uint256).max withdraws everything available
+    function setPaused(bool paused_) external onlyOwner {
+        paused = paused_;
+        emit PausedSet(paused_);
+    }
+
     function withdraw(address to, uint256 amount) external onlyOwner {
         if (to == address(0)) revert ZeroAddress();
         if (amount == type(uint256).max) amount = withdrawable();
@@ -163,6 +172,7 @@ contract StreamSubscription is CFASuperAppBase {
         override
         returns (bytes memory)
     {
+        if (paused) revert SubscriptionsPaused();
         if (flowRate < minFlowRate) revert FlowRateTooLow(flowRate, minFlowRate);
         ++subscriberCount;
         emit Subscribed(sender, flowRate);

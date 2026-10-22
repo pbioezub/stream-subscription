@@ -152,6 +152,31 @@ contract StreamSubscriptionTest is Test {
         assertEq(sub.subscriberCount(), 1);
     }
 
+    function testPause() public {
+        _setFlow(token, alice, MIN_RATE);
+
+        vm.prank(alice);
+        vm.expectRevert(StreamSubscription.NotOwner.selector);
+        sub.setPaused(true);
+
+        vm.prank(creator);
+        sub.setPaused(true);
+
+        vm.expectRevert(); // SubscriptionsPaused
+        _setFlow(token, bob, MIN_RATE);
+
+        // existing subscribers aren't affected
+        _setFlow(token, alice, MIN_RATE * 2);
+        assertTrue(sub.isSubscribed(alice));
+        _setFlow(token, alice, 0);
+        _assertHealthy();
+
+        vm.prank(creator);
+        sub.setPaused(false);
+        _setFlow(token, bob, MIN_RATE);
+        assertTrue(sub.isSubscribed(bob));
+    }
+
     function testRejectsTooLowFlowRate() public {
         vm.expectRevert(); // FlowRateTooLow bubbles up through the host
         _setFlow(token, alice, MIN_RATE - 1);
