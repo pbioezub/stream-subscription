@@ -51,8 +51,6 @@ permissioned, so `create` only works when sent by an allowlisted deployer accoun
 `frontend/` has a small web app: a subscribe page to share with subscribers, a creator page (stats,
 collaborators, withdraw, pause) and a form to create new subscriptions. See `frontend/README.md`.
 
-Live on OP Sepolia: https://pbioezub.github.io/stream-subscription/#/s/0xB45A8ad0A67172FeC0d0421671F2d91944F4C51F
-
 ## License
 
 MIT
