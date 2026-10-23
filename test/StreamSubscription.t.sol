@@ -152,6 +152,36 @@ contract StreamSubscriptionTest is Test {
         assertEq(sub.subscriberCount(), 1);
     }
 
+    function testSubscribedSinceAndTotalStreamed() public {
+        uint256 start = block.timestamp;
+        _setFlow(token, alice, MIN_RATE);
+        assertEq(sub.subscribedSince(alice), start);
+        assertEq(sub.totalStreamed(alice), 0);
+
+        vm.warp(start + 10 days);
+        assertEq(sub.totalStreamed(alice), uint256(uint96(MIN_RATE)) * 10 days);
+
+        _setFlow(token, alice, MIN_RATE * 2); // an update keeps the start date
+        assertEq(sub.subscribedSince(alice), start);
+        vm.warp(start + 15 days);
+        uint256 expected = uint256(uint96(MIN_RATE)) * 20 days; // 10 days at 1x + 5 days at 2x
+        assertEq(sub.totalStreamed(alice), expected);
+
+        _setFlow(token, alice, 0);
+        assertEq(sub.subscribedSince(alice), 0);
+        // matches what actually left alice's account (the stream deposit is returned on close)
+        assertEq(1000e18 - token.balanceOf(alice), expected);
+        vm.warp(start + 20 days);
+        assertEq(sub.totalStreamed(alice), expected);
+
+        // a new subscription starts over, the total keeps counting
+        _setFlow(token, alice, MIN_RATE);
+        assertEq(sub.subscribedSince(alice), start + 20 days);
+        vm.warp(start + 21 days);
+        assertEq(sub.totalStreamed(alice), expected + uint256(uint96(MIN_RATE)) * 1 days);
+        assertEq(sub.totalStreamed(bob), 0);
+    }
+
     function testPause() public {
         _setFlow(token, alice, MIN_RATE);
 
@@ -354,6 +384,8 @@ contract StreamSubscriptionTest is Test {
             );
         assertFalse(sub.isSubscribed(poor));
         assertEq(sub.subscriberCount(), 0);
+        assertEq(sub.subscribedSince(poor), 0);
+        assertEq(sub.totalStreamed(poor), uint256(uint96(MIN_RATE)) * 30 days);
         assertEq(sub.distributionFlowRate(), 0);
         _assertHealthy();
     }

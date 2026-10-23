@@ -34,6 +34,11 @@ contract StreamSubscription is CFASuperAppBase {
     /// @notice When true, new streams are rejected. Existing ones keep working and can still be updated or closed.
     bool public paused;
 
+    /// @notice Start of the current subscription, 0 if not subscribed.
+    mapping(address subscriber => uint256) public subscribedSince;
+    // streamed up to the last flow update, see `totalStreamed`
+    mapping(address subscriber => uint256) internal _streamed;
+
     event Subscribed(address indexed subscriber, int96 flowRate);
     event SubscriptionUpdated(address indexed subscriber, int96 flowRate, int96 previousFlowRate);
     event Unsubscribed(address indexed subscriber, int96 previousFlowRate);
@@ -90,6 +95,12 @@ contract StreamSubscription is CFASuperAppBase {
 
     function subscriberFlowRate(address subscriber) external view returns (int96) {
         return token.getCFAFlowRate(subscriber, address(this));
+    }
+
+    /// @notice Everything `subscriber` has streamed to the app so far, over all of their subscriptions.
+    function totalStreamed(address subscriber) external view returns (uint256) {
+        (uint256 lastUpdated, int96 rate,,) = token.getCFAFlowInfo(subscriber, address(this));
+        return _streamed[subscriber] + _streamedSince(rate, lastUpdated);
     }
 
     function totalInflowRate() public view returns (int96) {
@@ -178,6 +189,7 @@ contract StreamSubscription is CFASuperAppBase {
         if (paused) revert SubscriptionsPaused();
         if (flowRate < minFlowRate) revert FlowRateTooLow(flowRate, minFlowRate);
         ++subscriberCount;
+        subscribedSince[sender] = block.timestamp;
         emit Subscribed(sender, flowRate);
         return _syncDistribution(ctx, false);
     }
@@ -187,22 +199,27 @@ contract StreamSubscription is CFASuperAppBase {
         address sender,
         int96 flowRate,
         int96 previousFlowRate,
-        uint256,
+        uint256 lastUpdated,
         bytes calldata ctx
     ) internal override returns (bytes memory) {
         if (flowRate < minFlowRate) revert FlowRateTooLow(flowRate, minFlowRate);
+        _streamed[sender] += _streamedSince(previousFlowRate, lastUpdated);
         emit SubscriptionUpdated(sender, flowRate, previousFlowRate);
         return _syncDistribution(ctx, false);
     }
 
     // must not revert, otherwise the app gets jailed
-    function onInFlowDeleted(ISuperToken, address sender, int96 previousFlowRate, uint256, bytes calldata ctx)
-        internal
-        override
-        returns (bytes memory)
-    {
+    function onInFlowDeleted(
+        ISuperToken,
+        address sender,
+        int96 previousFlowRate,
+        uint256 lastUpdated,
+        bytes calldata ctx
+    ) internal override returns (bytes memory) {
         // guarded: an underflow here would revert and jail the app
         if (subscriberCount > 0) --subscriberCount;
+        delete subscribedSince[sender];
+        _streamed[sender] += _streamedSince(previousFlowRate, lastUpdated);
         emit Unsubscribed(sender, previousFlowRate);
         return _syncDistribution(ctx, true);
     }
@@ -212,6 +229,12 @@ contract StreamSubscription is CFASuperAppBase {
     function _poolShare(int96 inflow) internal view returns (int96) {
         if (inflow <= 0) return 0;
         return int96(int256(uint256(uint96(inflow)) * poolShareBps / BPS));
+    }
+
+    // can't revert: rate fits in 96 bits and the elapsed time in far less than 160
+    function _streamedSince(int96 rate, uint256 lastUpdated) internal view returns (uint256) {
+        if (rate <= 0 || lastUpdated >= block.timestamp) return 0;
+        return uint256(uint96(rate)) * (block.timestamp - lastUpdated);
     }
 
     // CFA deposit formula is used as an upper bound for the GDA buffer (same params, CFA also rounds up)

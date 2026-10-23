@@ -559,6 +559,25 @@ export const streamSubscriptionAbi = [
   },
   {
     "type": "function",
+    "name": "subscribedSince",
+    "inputs": [
+      {
+        "name": "subscriber",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "subscriberCount",
     "inputs": [],
     "outputs": [
@@ -631,6 +650,25 @@ export const streamSubscriptionAbi = [
         "name": "",
         "type": "int96",
         "internalType": "int96"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalStreamed",
+    "inputs": [
+      {
+        "name": "subscriber",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"

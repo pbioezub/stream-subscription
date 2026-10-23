@@ -12,6 +12,9 @@ Contracts:
 - `src/StreamSubscription.sol` — the Super App, also admin of the revenue pool
 - `src/StreamSubscriptionFactory.sol` — deploys and registers new subscriptions
 
+`subscribedSince(user)` and `totalStreamed(user)` give how long someone has been subscribed and how much they
+have paid in total, e.g. for perks after a few months or above some amount.
+
 The owner can pause new subscriptions (`setPaused`); existing streams keep working.
 
 GDA buffers aren't covered by app credit, so the app needs a small reserve in the token before the first
@@ -43,7 +46,7 @@ Deployed on OP Sepolia:
 | demo subscription (0.001 ETHx / month) | [`0xB45A8ad0A67172FeC0d0421671F2d91944F4C51F`](https://optimism-sepolia.blockscout.com/address/0xB45A8ad0A67172FeC0d0421671F2d91944F4C51F) |
 
 OP Mainnet: factory [`0xe684dA181b49156d602b814FFfd4C5De6fD52132`](https://optimistic.etherscan.io/address/0xe684dA181b49156d602b814FFfd4C5De6fD52132)
-(verified on Sourcify). Apps register themselves in the constructor, and on OP Mainnet registration is
+(verified on Sourcify, code as of tag `v0.1.0`). Apps register themselves in the constructor, and on OP Mainnet registration is
 permissioned, so `create` only works when sent by an allowlisted deployer account.
 
 ## Frontend
