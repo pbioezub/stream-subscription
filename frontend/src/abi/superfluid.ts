@@ -21,6 +21,7 @@ export const erc20Abi = [
 
 export const cfaForwarderAbi = [
   { type: "function", name: "setFlowrate", stateMutability: "nonpayable", inputs: [{ name: "token", type: "address" }, { name: "receiver", type: "address" }, { name: "flowrate", type: "int96" }], outputs: [{ type: "bool" }] },
+  { type: "function", name: "getAccountFlowrate", stateMutability: "view", inputs: [{ name: "token", type: "address" }, { name: "account", type: "address" }], outputs: [{ type: "int96" }] },
 ] as const;
 
 export const poolAbi = [

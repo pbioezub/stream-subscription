@@ -4,7 +4,7 @@ import { streamSubscriptionAbi } from "../abi/StreamSubscription";
 import { cfaForwarderAbi, superTokenAbi } from "../abi/superfluid";
 import { CFA_FORWARDER } from "../lib/chains";
 import { Wrap } from "../components/Wrap";
-import { fmt, perMonth, short } from "../lib/format";
+import { fmt, perMonth, runway, short } from "../lib/format";
 import { useTx } from "../lib/useTx";
 
 export function Subscribe({ app }: { app: Address }) {
@@ -41,11 +41,14 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
       { ...tok, functionName: "balanceOf", args: [user] },
       { ...sub, functionName: "subscriberFlowRate", args: [user] },
       { ...sub, functionName: "bufferShortfall", args: [minFlowRate] },
+      { address: CFA_FORWARDER, abi: cfaForwarderAbi, functionName: "getAccountFlowrate", args: [token, user] },
     ],
   });
   if (!reads.data) return <p>loading…</p>;
-  const [symbol, decimals, balance, myRate, shortfall] = reads.data;
+  const [symbol, decimals, balance, myRate, shortfall, netFlow] = reads.data;
   const subscribed = myRate >= minFlowRate;
+  // other CFA streams of the user count too, GDA ones aren't included
+  const lasts = runway(balance, subscribed ? -netFlow : minFlowRate - netFlow);
 
   const setFlow = (rate: bigint, label: string) =>
     tx.send(label, {
@@ -71,6 +74,11 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
           <p>
             You're subscribed, streaming {fmt(perMonth(myRate), decimals)} {symbol} / month.
           </p>
+          {lasts && (
+            <p className="muted">
+              Your balance of {fmt(balance, decimals)} {symbol} lasts about {lasts} at this rate.
+            </p>
+          )}
           <button onClick={() => setFlow(0n, "cancelling")} disabled={!!tx.pending}>
             {tx.pending ?? "cancel subscription"}
           </button>
@@ -79,6 +87,7 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
         <div className="card">
           <p>
             Your balance: {fmt(balance, decimals)} {symbol}
+            {balance > 0n && lasts && <span className="muted"> · enough for about {lasts}</span>}
           </p>
           {paused && <p className="error">The creator has paused new subscriptions.</p>}
           {shortfall > 0n && !paused && (
