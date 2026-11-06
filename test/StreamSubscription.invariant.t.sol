@@ -28,6 +28,9 @@ contract Handler is Test {
     address[] public actors;
     address[] public members;
 
+    /// set if a new subscriber got in while the limit was reached
+    bool public joinedOverLimit;
+
     constructor(
         SuperfluidFrameworkDeployer.Framework memory sf_,
         ISuperToken token_,
@@ -66,8 +69,12 @@ contract Handler is Test {
             vm.prank(owner);
             token.transfer(address(sub), shortfall);
         }
+        uint256 max = sub.maxSubscribers();
+        bool full = current == 0 && max != 0 && sub.subscriberCount() >= max;
         vm.prank(a);
-        sf.cfaV1Forwarder.setFlowrate(token, address(sub), rate);
+        try sf.cfaV1Forwarder.setFlowrate(token, address(sub), rate) {
+            if (full) joinedOverLimit = true;
+        } catch { }
     }
 
     function closeFlow(uint256 actorSeed) external {
@@ -95,6 +102,11 @@ contract Handler is Test {
         uint256 amount = bound(amountSeed, 0, sub.withdrawable());
         vm.prank(owner);
         sub.withdraw(owner, amount);
+    }
+
+    function setMaxSubscribers(uint256 max) external {
+        vm.prank(owner);
+        sub.setMaxSubscribers(bound(max, 0, actors.length));
     }
 
     function warp(uint256 secs) external {
@@ -148,6 +160,12 @@ contract StreamSubscriptionInvariantTest is Test {
     /// forge-config: default.invariant.depth = 40
     function invariant_distributionWithinShare() public view {
         assertLe(sub.distributionFlowRate(), sub.targetDistributionFlowRate());
+    }
+
+    /// forge-config: default.invariant.runs = 32
+    /// forge-config: default.invariant.depth = 40
+    function invariant_noJoinOverLimit() public view {
+        assertFalse(handler.joinedOverLimit());
     }
 
     /// forge-config: default.invariant.runs = 32

@@ -15,7 +15,8 @@ Contracts:
 `subscribedSince(user)` and `totalStreamed(user)` give how long someone has been subscribed and how much they
 have paid in total, e.g. for perks after a few months or above some amount.
 
-The owner can pause new subscriptions (`setPaused`); existing streams keep working.
+The owner can pause new subscriptions (`setPaused`) or cap their number (`setMaxSubscribers`, 0 = no limit);
+existing streams keep working either way.
 
 GDA buffers aren't covered by app credit, so the app needs a small reserve in the token before the first
 subscriber joins (`initialReserve` in `create`, or just transfer it; `bufferShortfall(rate)` tells how much).

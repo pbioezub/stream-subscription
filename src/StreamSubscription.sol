@@ -33,6 +33,8 @@ contract StreamSubscription is CFASuperAppBase {
     uint256 public subscriberCount;
     /// @notice When true, new streams are rejected. Existing ones keep working and can still be updated or closed.
     bool public paused;
+    /// @notice Max number of subscribers, 0 = no limit. Lowering it below the current count only blocks new ones.
+    uint256 public maxSubscribers;
 
     /// @notice Start of the current subscription, 0 if not subscribed.
     mapping(address subscriber => uint256) public subscribedSince;
@@ -47,6 +49,7 @@ contract StreamSubscription is CFASuperAppBase {
     event MemberUnitsUpdated(address indexed member, uint128 units);
     event Withdrawn(address indexed to, uint256 amount);
     event PausedSet(bool paused);
+    event MaxSubscribersSet(uint256 maxSubscribers);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -60,6 +63,7 @@ contract StreamSubscription is CFASuperAppBase {
     error NotPendingOwner();
     error TransferFailed();
     error SubscriptionsPaused();
+    error SubscriberLimitReached(uint256 maxSubscribers);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -129,6 +133,12 @@ contract StreamSubscription is CFASuperAppBase {
         return after_ >= 0 ? 0 : uint256(-after_);
     }
 
+    /// @notice Free places left, type(uint256).max when there's no limit.
+    function seatsLeft() external view returns (uint256) {
+        if (maxSubscribers == 0) return type(uint256).max;
+        return subscriberCount >= maxSubscribers ? 0 : maxSubscribers - subscriberCount;
+    }
+
     function isAcceptedSuperToken(ISuperToken superToken) public view override returns (bool) {
         return address(superToken) == address(token);
     }
@@ -156,6 +166,11 @@ contract StreamSubscription is CFASuperAppBase {
     function setPaused(bool paused_) external onlyOwner {
         paused = paused_;
         emit PausedSet(paused_);
+    }
+
+    function setMaxSubscribers(uint256 maxSubscribers_) external onlyOwner {
+        maxSubscribers = maxSubscribers_;
+        emit MaxSubscribersSet(maxSubscribers_);
     }
 
     function withdraw(address to, uint256 amount) external onlyOwner {
@@ -188,6 +203,7 @@ contract StreamSubscription is CFASuperAppBase {
     {
         if (paused) revert SubscriptionsPaused();
         if (flowRate < minFlowRate) revert FlowRateTooLow(flowRate, minFlowRate);
+        if (maxSubscribers != 0 && subscriberCount >= maxSubscribers) revert SubscriberLimitReached(maxSubscribers);
         ++subscriberCount;
         subscribedSince[sender] = block.timestamp;
         emit Subscribed(sender, flowRate);

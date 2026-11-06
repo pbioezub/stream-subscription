@@ -207,6 +207,49 @@ contract StreamSubscriptionTest is Test {
         assertTrue(sub.isSubscribed(bob));
     }
 
+    function testMaxSubscribers() public {
+        assertEq(sub.seatsLeft(), type(uint256).max);
+
+        vm.prank(alice);
+        vm.expectRevert(StreamSubscription.NotOwner.selector);
+        sub.setMaxSubscribers(1);
+
+        vm.prank(creator);
+        sub.setMaxSubscribers(1);
+        assertEq(sub.seatsLeft(), 1);
+
+        _setFlow(token, alice, MIN_RATE);
+        assertEq(sub.seatsLeft(), 0);
+        vm.expectRevert(); // SubscriberLimitReached
+        _setFlow(token, bob, MIN_RATE);
+
+        // updates of existing subscribers still work
+        _setFlow(token, alice, MIN_RATE * 2);
+
+        // leaving frees the place
+        _setFlow(token, alice, 0);
+        _setFlow(token, bob, MIN_RATE);
+        assertTrue(sub.isSubscribed(bob));
+
+        // lowering the limit below the current count keeps everyone, but blocks new ones
+        vm.prank(creator);
+        sub.setMaxSubscribers(2);
+        _setFlow(token, alice, MIN_RATE);
+        vm.prank(creator);
+        sub.setMaxSubscribers(1);
+        assertEq(sub.seatsLeft(), 0);
+        assertEq(sub.subscriberCount(), 2);
+        _setFlow(token, alice, 0);
+        assertEq(sub.seatsLeft(), 0);
+
+        // 0 = no limit
+        vm.prank(creator);
+        sub.setMaxSubscribers(0);
+        _setFlow(token, alice, MIN_RATE);
+        assertEq(sub.subscriberCount(), 2);
+        _assertHealthy();
+    }
+
     /// Callbacks run with a 3M gas limit; the whole create/delete tx (incl. the callback) stays well below it.
     function testCallbackGas() public {
         _setUnits(collab1, 1, collab2, 1);

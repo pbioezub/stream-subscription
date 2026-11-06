@@ -427,6 +427,19 @@ export const streamSubscriptionAbi = [
   },
   {
     "type": "function",
+    "name": "maxSubscribers",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "minFlowRate",
     "inputs": [],
     "outputs": [
@@ -505,6 +518,19 @@ export const streamSubscriptionAbi = [
   },
   {
     "type": "function",
+    "name": "seatsLeft",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "selfRegister",
     "inputs": [
       {
@@ -521,6 +547,19 @@ export const streamSubscriptionAbi = [
         "name": "activateOnDeleted",
         "type": "bool",
         "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMaxSubscribers",
+    "inputs": [
+      {
+        "name": "maxSubscribers_",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -751,6 +790,19 @@ export const streamSubscriptionAbi = [
   },
   {
     "type": "event",
+    "name": "MaxSubscribersSet",
+    "inputs": [
+      {
+        "name": "maxSubscribers",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "MemberUnitsUpdated",
     "inputs": [
       {
@@ -962,6 +1014,17 @@ export const streamSubscriptionAbi = [
     "type": "error",
     "name": "NotPendingOwner",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SubscriberLimitReached",
+    "inputs": [
+      {
+        "name": "maxSubscribers",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
