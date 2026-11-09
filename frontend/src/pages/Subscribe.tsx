@@ -5,6 +5,7 @@ import { cfaForwarderAbi, superTokenAbi } from "../abi/superfluid";
 import { CFA_FORWARDER } from "../lib/chains";
 import { Wrap } from "../components/Wrap";
 import { fmt, perMonth, runway, short } from "../lib/format";
+import { useNewViews } from "../lib/limits";
 import { useTx } from "../lib/useTx";
 
 export function Subscribe({ app }: { app: Address }) {
@@ -30,6 +31,7 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
   const { address } = useAccount();
   const user = address ?? zeroAddress;
   const tx = useTx();
+  const extra = useNewViews(app, address);
 
   const tok = { address: token, abi: superTokenAbi } as const;
   const sub = { address: app, abi: streamSubscriptionAbi } as const;
@@ -44,9 +46,10 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
       { address: CFA_FORWARDER, abi: cfaForwarderAbi, functionName: "getAccountFlowrate", args: [token, user] },
     ],
   });
-  if (!reads.data) return <p>loading…</p>;
+  if (!reads.data || extra.loading) return <p>loading…</p>;
   const [symbol, decimals, balance, myRate, shortfall, netFlow] = reads.data;
   const subscribed = myRate >= minFlowRate;
+  const full = extra.seatsLeft === 0n;
   // other CFA streams of the user count too, GDA ones aren't included
   const lasts = runway(balance, subscribed ? -netFlow : minFlowRate - netFlow);
 
@@ -64,7 +67,9 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
         {fmt(perMonth(minFlowRate), decimals)} {symbol} / month
       </h2>
       <p className="muted">
-        {count.toString()} subscriber{count === 1n ? "" : "s"} · paid as a stream, cancel any time
+        {count.toString()} subscriber{count === 1n ? "" : "s"}
+        {extra.max !== undefined && ` · ${extra.seatsLeft} of ${extra.max} places left`} · paid as a stream, cancel any
+        time
       </p>
 
       {!address ? (
@@ -74,6 +79,12 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
           <p>
             You're subscribed, streaming {fmt(perMonth(myRate), decimals)} {symbol} / month.
           </p>
+          {extra.since !== undefined && (
+            <p className="muted">
+              Member since {new Date(Number(extra.since) * 1000).toLocaleDateString()}
+              {extra.totalStreamed !== undefined && `, paid ${fmt(extra.totalStreamed, decimals)} ${symbol} so far`}.
+            </p>
+          )}
           {lasts && (
             <p className="muted">
               Your balance of {fmt(balance, decimals)} {symbol} lasts about {lasts} at this rate.
@@ -90,12 +101,13 @@ function SubscribeView(props: { app: Address; token: Address; minFlowRate: bigin
             {balance > 0n && lasts && <span className="muted"> · enough for about {lasts}</span>}
           </p>
           {paused && <p className="error">The creator has paused new subscriptions.</p>}
+          {full && !paused && <p className="error">All places are taken. Check back when someone leaves.</p>}
           {shortfall > 0n && !paused && (
             <p className="error">The creator needs to top up the reserve before new subscribers can join.</p>
           )}
           <button
             onClick={() => setFlow(minFlowRate, "subscribing")}
-            disabled={!!tx.pending || paused || shortfall > 0n || balance === 0n}
+            disabled={!!tx.pending || paused || full || shortfall > 0n || balance === 0n}
           >
             {tx.pending ?? "subscribe"}
           </button>

@@ -7,6 +7,7 @@ import { gdaForwarderAbi, superTokenAbi } from "../abi/superfluid";
 import { CHAINS, GDA_FORWARDER } from "../lib/chains";
 import { fmt, perMonth, short } from "../lib/format";
 import { poolMembers, subscribers } from "../lib/subgraph";
+import { useNewViews } from "../lib/limits";
 import { useTx } from "../lib/useTx";
 
 export function Manage({ app }: { app: Address }) {
@@ -15,6 +16,8 @@ export function Manage({ app }: { app: Address }) {
   const chain = CHAINS[chainId];
   const tx = useTx();
   const [topUp, setTopUp] = useState("");
+  const [limit, setLimit] = useState("");
+  const extra = useNewViews(app, undefined);
 
   const base = { address: app, abi: streamSubscriptionAbi } as const;
   const info = useReadContracts({
@@ -71,7 +74,7 @@ export function Manage({ app }: { app: Address }) {
       </p>
 
       <div className="stats">
-        <Stat label="subscribers" value={count.toString()} />
+        <Stat label="subscribers" value={extra.max !== undefined ? `${count} / ${extra.max}` : count.toString()} />
         <Stat label="revenue / month" value={money(perMonth(inflow))} />
         <Stat label="to collaborators / month" value={money(perMonth(distribution))} />
         <Stat label="withdrawable" value={money(withdrawable)} />
@@ -125,6 +128,26 @@ export function Manage({ app }: { app: Address }) {
               top up
             </button>
           </div>
+          {extra.limitSupported && (
+            <div className="row">
+              <input
+                placeholder={extra.max !== undefined ? `max subscribers: ${extra.max}` : "max subscribers (none)"}
+                inputMode="numeric"
+                value={limit}
+                onChange={(e) => setLimit(e.target.value.trim())}
+              />
+              <button
+                disabled={!!tx.pending || !/^\d+$/.test(limit)}
+                onClick={async () => {
+                  await tx.send("setting the limit", { ...base, functionName: "setMaxSubscribers", args: [BigInt(limit)] });
+                  setLimit("");
+                }}
+              >
+                set limit
+              </button>
+              <span className="muted small">0 = no limit</span>
+            </div>
+          )}
           {tx.pending && <p className="muted">{tx.pending}…</p>}
           {tx.error && <p className="error">{tx.error}</p>}
         </div>
